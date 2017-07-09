@@ -113,7 +113,7 @@ public class Prime {
 		// 2 3 5 7 11 13 17 19 23 29
 
 		boolean thisHasFactors = false;
-		if (foundPrimes2.isEmpty()) {
+		if (foundPrimes2.size() > 0) {
 			long res = Math.floorMod(solveForThisPrime, foundPrimes2.get(counter));
 			if (res == 0) {
 				thisHasFactors = true;
