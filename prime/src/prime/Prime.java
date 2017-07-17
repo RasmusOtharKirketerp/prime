@@ -2,9 +2,11 @@ package prime;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Iterator;
 
 public class Prime {
 	// Private
@@ -43,9 +45,21 @@ public class Prime {
 
 	public Prime(int maxTry) {
 		this.setFindMaxPrime(maxTry);
+		System.out.println();
+	}
+
+	public long lookUpPrime(long p) {
+		long retVal = 0; // not found
+		for (long i = 0; i < foundPrimes2.size(); i++) {
+			if (p == foundPrimes2.get((int) i))
+				retVal = i;
+		}
+		System.out.println("Checking " + p + " for prime...");
+		return retVal;
 	}
 
 	public void doPrimes(boolean timetrace, boolean displaytrace) throws InterruptedException {
+		boolean wasPrime = true;
 		setTraceTime(timetrace);
 		setTraceDisplay(displaytrace);
 		long now = System.nanoTime();
@@ -56,11 +70,41 @@ public class Prime {
 		}
 
 		for (int i = 2; i <= getFindMaxPrime(); i++) {
-			isPrime2(i);
+
+			wasPrime = isPrime2(i);
+
 		}
 		long endTime = System.nanoTime();
 		if (traceTime)
 			System.out.println("Time for solving for all(to " + getFindMaxPrime() + ") Prims is : " + (endTime - now));
+	}
+
+	public String doPrimeFactor(int i, int counter) {
+		String retval = "";
+		long divByThis = counter;
+		//System.out.println("Prøver at div " + i + " med " + divByThis);
+
+		double modRes = i % divByThis;
+		long divRes = 0;
+		long lookUp = 0;
+		if (modRes == 0) {
+			divRes = i / divByThis;
+			lookUp = lookUpPrime(divRes);
+			if (lookUp == 0) {
+				retval = divByThis + " x " + doPrimeFactor((int) (divRes), 2);
+			}
+			else
+				retval =  divByThis + " x " + divRes + " " + retval; 
+
+		} else {
+			counter++;
+			retval = doPrimeFactor((int) i, counter);
+
+		}
+ 
+		
+		return retval;
+
 	}
 
 	public void printStats() throws FileNotFoundException {
@@ -71,6 +115,7 @@ public class Prime {
 		long max = 0;
 		long value = 0;
 		long sum = 0;
+		System.out.println("");
 
 		for (int i = 0; i < traceNanno2.size(); i++) {
 			sum += traceNanno2.get(i);
@@ -92,7 +137,7 @@ public class Prime {
 			if (i > 0)
 				out.println(i + ";" + foundPrimes2.get(i) + ";" + sum / i);
 		}
-		
+
 		if (traceTime) {
 			System.out.println("Fastest calc was : " + min);
 			System.out.println("Slowest calc was : " + max);
