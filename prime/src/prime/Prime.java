@@ -1,22 +1,24 @@
 package prime;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Iterator;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class Prime {
 	// Private
 	private boolean traceTime = false;
 	private boolean traceDisplay = false;
 
-	private ArrayList<Long> foundPrimes2 = new ArrayList<>();
-	private ArrayList<Long> traceNanno2 = new ArrayList<>();
+	// private ArrayList<Long> foundPrimes = new ArrayList<>();
+
+	private Long nextPrime = 2L;
 
 	private long findMaxPrime;
+
+	long totalMemory = 0;
+	long freeMemory = 0;
 
 	// Getter and setters....
 	public boolean isTraceTime() {
@@ -43,187 +45,193 @@ public class Prime {
 		this.findMaxPrime = findMaxPrime;
 	}
 
-	public Prime(int maxTry) {
+	public Prime(long maxTry) {
 		this.setFindMaxPrime(maxTry);
-		System.out.println();
 	}
 
-	public long lookUpPrime(long p) {
-		long retVal = 0; // not found
-		for (long i = 0; i < foundPrimes2.size(); i++) {
-			if (p == foundPrimes2.get((int) i))
-				retVal = i;
-		}
-		System.out.println("Checking " + p + " for prime...");
-		return retVal;
-	}
-
-	public void doPrimes(boolean timetrace, boolean displaytrace) throws InterruptedException {
-		boolean wasPrime = true;
+	public void doPrimes(boolean timetrace, boolean displaytrace) throws InterruptedException, IOException {
 		setTraceTime(timetrace);
 		setTraceDisplay(displaytrace);
-		long now = System.nanoTime();
-		if (isTraceDisplay()) {
-
-			System.out.println(now);
-
+		readPrimeFile();
+		boolean isPrimeBoolean=false;
+		for (long i = nextPrime; i <= getFindMaxPrime(); i++) {
+			isPrimeBoolean = isPrime2(i);
+			logThis(i, isPrimeBoolean);
 		}
-
-		for (int i = 2; i <= getFindMaxPrime(); i++) {
-
-			wasPrime = isPrime2(i);
-
-		}
-		long endTime = System.nanoTime();
-		if (traceTime)
-			System.out.println("Time for solving for all(to " + getFindMaxPrime() + ") Prims is : " + (endTime - now));
 	}
 
-	public String doPrimeFactor(int i, int counter) {
-		String retval = "";
-		long divByThis = counter;
-		//System.out.println("Prøver at div " + i + " med " + divByThis);
+	private void readPrimeFile() {
+		BufferedReader in;
+		String lineRead = "";
+		String[] parts;
+		String primeInString;
 
-		double modRes = i % divByThis;
-		long divRes = 0;
-		long lookUp = 0;
-		if (modRes == 0) {
-			divRes = i / divByThis;
-			lookUp = lookUpPrime(divRes);
-			if (lookUp == 0) {
-				retval = divByThis + " x " + doPrimeFactor((int) (divRes), 2);
+		System.out.println("ReadPrimeFile...");
+
+		try {
+			FileReader fstream = new FileReader("primes.txt");
+			in = new BufferedReader(fstream);
+			while ((lineRead = in.readLine()) != null) {
+				parts = lineRead.split(";");
+				primeInString = parts[0]; // 004
+				nextPrime = Long.valueOf(primeInString).longValue();
+				System.out.println("NextPrime in readPrime :" + nextPrime);
+
 			}
-			else
-				retval =  divByThis + " x " + divRes + " " + retval; 
 
-		} else {
-			counter++;
-			retval = doPrimeFactor((int) i, counter);
-
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
- 
-		
+
+	}
+
+	private long getNoPrimeInArchive(long search) {
+		BufferedReader in;
+		String lineRead = "";
+		String[] parts;
+		String primeNo;
+
+		long primeNoLong;
+		long retval = -1L;
+		long hit = 0;
+
+		boolean stop = false;
+
+		System.out.println("ReturnNoPrimeInArchive...");
+
+		try {
+			FileReader fstream = new FileReader("primes.txt");
+			in = new BufferedReader(fstream);
+			while ((lineRead = in.readLine()) != null && !stop) {
+				parts = lineRead.split(";");
+				primeNo = parts[1];
+				primeNoLong = Long.valueOf(primeNo).longValue();
+				if (primeNoLong > -1) 
+					hit++;
+				if (search == hit) {
+					retval = primeNoLong;
+					stop = true;
+					System.out.println("Returning prime no : " + primeNo);
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 		return retval;
 
 	}
 
-	public void printStats() throws FileNotFoundException {
-		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-		PrintWriter out = new PrintWriter("prime_Stats " + findMaxPrime + " " + timeStamp + ".csv");
-		out.println("Counter" + ";" + "Prime" + ";" + "avg nanno");
-		long min = 999999999;
-		long max = 0;
-		long value = 0;
-		long sum = 0;
-		System.out.println("");
+	private long isPrimeInArchive(long l) {
+		BufferedReader in;
+		String lineRead = "";
+		String[] parts;
+		String primeInString;
+		String idxInString;
+		long pl;
+		long il;
 
-		for (int i = 0; i < traceNanno2.size(); i++) {
-			sum += traceNanno2.get(i);
-			value = traceNanno2.get(i);
+		long retval = 0;
 
-			if (value > max)
-				max = value;
-
-			if (value < min)
-				min = value;
-
-			if (traceDisplay)
-				System.out.println(" Prime : " + foundPrimes2.get(i));
-			if (i > 0 && traceTime) {
-				System.out.print(value);
-				System.out.println("Running avg : " + sum / i);
+		System.out.println("Searching for primes in archive:" + l);
+		try {
+			FileReader fstream = new FileReader("primes.txt");
+			in = new BufferedReader(fstream);
+			while ((lineRead = in.readLine()) != null) {
+				parts = lineRead.split(";");
+				idxInString = parts[0];
+				primeInString = parts[1];
+				pl = Long.valueOf(primeInString).longValue();
+				il = Long.valueOf(idxInString).longValue();
+				if (il == l) {
+					System.out.println("found: " + primeInString);
+					retval = pl;
+				} else
+					System.out.println("On idx: " + idxInString + " was : " + pl);
 
 			}
-			if (i > 0)
-				out.println(i + ";" + foundPrimes2.get(i) + ";" + sum / i);
+
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
-		if (traceTime) {
-			System.out.println("Fastest calc was : " + min);
-			System.out.println("Slowest calc was : " + max);
-			System.out.println("Avg cals was     : " + sum / traceNanno2.size());
-			out.println("Fastest calc was : " + min);
-			out.println("Slowest calc was : " + max);
-			out.println("Avg cals was     : " + sum / traceNanno2.size());
+		System.out.println("isPrimeInArchive : " + retval);
+		return retval;
+	}
+
+	public String doPrimeFactor(long findOutIfThisOnIsPrime, int counter) {
+		String retval = "";
+		long divByThis = counter;
+		double modRes = findOutIfThisOnIsPrime % divByThis;
+		long divRes = 0;
+		long lookUp = 0;
+		if (modRes == 0) {
+			divRes = findOutIfThisOnIsPrime / divByThis;
+			lookUp = isPrimeInArchive(findOutIfThisOnIsPrime);
+			if (lookUp == 0) {
+				retval = divByThis + " x " + doPrimeFactor(divRes, 2);
+				System.out.println("calc..." + findOutIfThisOnIsPrime);
+			} else
+				retval = divByThis + " x " + divRes + " " + retval;
+
+		} else {
+			counter++;
+			retval = doPrimeFactor(findOutIfThisOnIsPrime, counter);
 		}
-		out.close();
+		return retval;
 
 	}
 
-	public boolean hasFactor(long solveForThisPrime, int counter, long sqrtInt) {
-		// if any on those modulus calculations is zero then there is a
-		// factor, and by definition this is
-		// not a prime number.
-
-		// 2 3 5 7 11 13 17 19 23 29
-
+	public boolean hasFactor(long solveForThisPrime, int counter) {
 		boolean thisHasFactors = false;
-		if (foundPrimes2.size() > 0) {
-			long res = Math.floorMod(solveForThisPrime, foundPrimes2.get(counter));
-			if (res == 0) {
-				thisHasFactors = true;
-			}
+
+		long getPrimeNoInArchiveLong = getNoPrimeInArchive(counter);
+		long res = Math.floorMod(solveForThisPrime, getPrimeNoInArchiveLong);
+		if (res == 0) {
+			thisHasFactors = true;
 		}
 
 		return thisHasFactors;
-
 	}
 
-	public boolean isPrime2(long solveForThisPrime) throws InterruptedException {
-		long now = System.nanoTime();
-		if (isTraceDisplay())
-			System.out.println("Version II : Solving for this prime : " + solveForThisPrime);
-
+	public boolean isPrime2(long solveForThisPrime) throws InterruptedException, IOException {
 		boolean thisIsPrime = false;
 		boolean thisHasFactors = false;
-
 		long cd = (int) Math.sqrt(solveForThisPrime);
-
-		for (int counter = 0; counter < cd; counter++) {
+		for (int counter = 1; counter < cd; counter++) {
 			thisIsPrime = true;
 			thisHasFactors = false;
-
-			if (hasFactor(solveForThisPrime, counter, cd)) {
+			if (hasFactor(solveForThisPrime, counter)) {
 				counter = (int) cd;
 				thisHasFactors = true;
 			}
 		}
 
-		long endTime = System.nanoTime();
-
 		thisIsPrime = !thisHasFactors;
-
-		if (thisIsPrime) {
-			foundPrimes2.add(solveForThisPrime);
-			traceNanno2.add((endTime - now));
-		}
 
 		return thisIsPrime;
 	}
 
+	private void logThis(long solveForThisPrime, boolean thisIsPrime) throws IOException {
+		BufferedWriter out;
+		String str = "";
+		try {
+			FileWriter fstream = new FileWriter("primes.txt", true);
+			out = new BufferedWriter(fstream);
+			if (!thisIsPrime)
+				str = solveForThisPrime + ";" + -1 + ";" + System.lineSeparator();
+			else
+				str = solveForThisPrime + ";" + solveForThisPrime + ";" + System.lineSeparator();
+			System.out.println(str);
+			out.write(str);
+			out.flush();
+			out.close();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+
 }
-// Time for solving for all(to 1000) Prims is : 424297816
-// Time for solving for all(to 1000) Prims is : 1665677168
-// Time for solving for all(to 1000) Prims is : 1594345161
-// Time for solving for all(to 1000) Prims is : 1620644046
-// Time for solving for all(to 1000) Prims is : 638214825
-// Time for solving for all(to 1000) Prims is : 386908356
-// Time for solving for all(to 1000) Prims is : 344048864
-// Time for solving for all(to 1000) Prims is : 1565715410
-// Time for solving for all(to 1000) Prims is : 7373833
-// Time for solving for all(to 1000) Prims is : 5891955
-// Time for solving for all(to 1000) Prims is : 1573984454
-// Time for solving for all(to 1000) Prims is : 7246623
-
-// 1 mio.
-// Time for solving for all(to 1000000) Prims is : 278219773803
-// Time for solving for all(to 1000000) Prims is : 17026953503
-// Time for solving for all(to 1000000) Prims is : 14629429831
-// Time for solving for all(to 1000000) Prims is : 4621312491
-// Time for solving for all(to 1000000) Prims is : 4632645240
-// Time for solving for all(to 1000000) Prims is : 4639716456
-// Time for solving for all(to 1000000) Prims is : 691024349
-
-// 10 mio
-// Time for solving for all(to 10000000) Prims is : 17155761111
-// Time for solving for all(to 10000000) Prims is : 16169135146
